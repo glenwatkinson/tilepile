@@ -10,6 +10,7 @@ interface IUIScreen
 
 public class UIManager : MonoBehaviour
 {
+    public bool isTransitioning = false;
     CanvasGroup[] uiSection;
 
     void Awake()
@@ -44,6 +45,7 @@ public class UIManager : MonoBehaviour
 
     IEnumerator FadeInSection(CanvasGroup section)
     {
+        isTransitioning = true;
         section.gameObject.SetActive(true);
         section.alpha = 0;
         yield return new WaitForSeconds(0.25f);
@@ -52,6 +54,7 @@ public class UIManager : MonoBehaviour
             section.alpha += Time.deltaTime * 4.0f;
             yield return null;
         }
+        isTransitioning = false;
     }
 
     IEnumerator FadeOutSection(CanvasGroup section)

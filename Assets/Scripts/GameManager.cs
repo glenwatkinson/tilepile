@@ -42,6 +42,8 @@ public class GameManager : MonoBehaviour
 
     public void SetGameState(GameState newGameState)
     {
+        if (uIManager.isTransitioning)
+            return;
         switch (newGameState)
         {
             case GameState.Gameplay:    
@@ -83,10 +85,13 @@ public class GameManager : MonoBehaviour
 
     private void UpdateInput()
     {
-
+        // The input supports both dragging from one tile to another and clicking on each separately.
+        // A click only registers if the player releases their finger/mouse button while still over the tile they pressed it down on 
+        // otherwise it counts as a drag and will attempt to join the first piece with whatever they're pointing at now.
+        // dragging into nothing clears the original selection.
         if (Input.GetMouseButtonDown(0))
         {
-            TryToSelectTile();
+            AttemptToClick();
         }
         if (Input.GetMouseButton(0))
         {
@@ -100,12 +105,12 @@ public class GameManager : MonoBehaviour
             if (firstHitTile != null)
             {
                 effects.ClearDragLine();
-                TryToSelectTile();
+                AttemptToClick();
             }
         }
     }
 
-    private void TryToSelectTile()
+    private void AttemptToClick()
     {
         RaycastHit hit;
         var ray = gameCamera.ScreenPointToRay(Input.mousePosition);
@@ -114,35 +119,7 @@ public class GameManager : MonoBehaviour
             TilePiece hitPiece = hit.collider.gameObject.GetComponent<TilePiece>();
             if (hitPiece != null)
             {
-                if (firstHitTile == null)
-                {
-                    firstHitTile = hitPiece;
-                    effects.PlaceTileHighlight(hitPiece.transform.position);
-                }
-                else
-                {
-                    if (firstHitTile == hitPiece)
-                        return;
-                    Vector3[] pathway;
-                    if (tileBoard.CanPiecesConnect(firstHitTile, hitPiece, out pathway))
-                    {
-                        tileBoard.RemoveTilePiece(firstHitTile);
-                        tileBoard.RemoveTilePiece(hitPiece);
-                        score += 2;
-                        timeRemaining += 2;
-                        effects.ClearTileHighlights();
-                        effects.PlaceLine(pathway, true);
-                        effects.PlayExplosion(pathway[0]);
-                        effects.PlayExplosion(pathway[pathway.Length-1]);
-                        if (tileBoard.tilesOnBoard == 0)
-                            SetGameState(GameState.GameOver);
-                    }
-                    else
-                    {
-                        effects.ClearTileHighlights();
-                    }
-                    firstHitTile = null;
-                }
+                SelectTilePiece(hitPiece);
             }
             else
             {
@@ -154,6 +131,39 @@ public class GameManager : MonoBehaviour
         {
             firstHitTile = null;
             effects.ClearTileHighlights();
+        }
+    }
+
+    private void SelectTilePiece(TilePiece hitPiece)
+    {
+        if (firstHitTile == null)
+        {
+            firstHitTile = hitPiece;
+            effects.PlaceTileHighlight(hitPiece.transform.position);
+        }
+        else
+        {
+            if (firstHitTile == hitPiece)
+                return;
+            Vector3[] pathway;
+            if (tileBoard.CanPiecesConnect(firstHitTile, hitPiece, out pathway))
+            {
+                tileBoard.RemoveTilePiece(firstHitTile);
+                tileBoard.RemoveTilePiece(hitPiece);
+                score += 2;
+                timeRemaining += 2;
+                effects.ClearTileHighlights();
+                effects.PlaceLine(pathway, true);
+                effects.PlayExplosion(pathway[0]);
+                effects.PlayExplosion(pathway[pathway.Length-1]);
+                if (tileBoard.tilesOnBoard == 0)
+                    SetGameState(GameState.GameOver);
+            }
+            else
+            {
+                effects.ClearTileHighlights();
+            }
+            firstHitTile = null;
         }
     }
 
