@@ -23,15 +23,40 @@ public class UIManager : MonoBehaviour
             {
                 if (a == (int)newState)
                 {
-                    uiSection[a].gameObject.SetActive(true);
                     if (uiSection[a].GetComponent<IUIScreen>() != null)
                         uiSection[a].GetComponent<IUIScreen>().ConfigureScreen();
+                    if (!uiSection[a].gameObject.activeSelf && uiSection[a].alpha == 0)
+                        StartCoroutine(FadeInSection(uiSection[a]));
                 }
                 else
                 {
-                    uiSection[a].gameObject.SetActive(false);
+                    if (uiSection[a].gameObject.activeSelf && uiSection[a].alpha == 1)
+                        StartCoroutine(FadeOutSection(uiSection[a]));
                 }
             }
         }
+    }
+
+    IEnumerator FadeInSection(CanvasGroup section)
+    {
+        section.gameObject.SetActive(true);
+        section.alpha = 0;
+        yield return new WaitForSeconds(0.25f);
+        while (section.alpha < 1)
+        {
+            section.alpha += Time.deltaTime * 4.0f;
+            yield return null;
+        }
+    }
+
+    IEnumerator FadeOutSection(CanvasGroup section)
+    {
+        section.alpha = 1.0f;
+        while (section.alpha > 0)
+        {
+            section.alpha -= Time.deltaTime * 4.0f;
+            yield return null;
+        }
+        section.gameObject.SetActive(false);
     }
 }

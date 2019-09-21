@@ -70,14 +70,14 @@ public class ConnectionLine : MonoBehaviour
             animating = false;
             for (int a = 1; a < positions.Length-1; a++)
             {
-                startPositions[a] = Vector3.MoveTowards(startPositions[a], positions[a], 0.15f);
+                startPositions[a] = Vector3.MoveTowards(startPositions[a], positions[a], 10.0f * Time.deltaTime);
                 if (startPositions[a] != positions[a])
                     animating = true;
             }
             lineRenderer.SetPositions(startPositions);
             yield return null;
         }
-        yield return new WaitForSeconds(1.0f);
+        yield return new WaitForSeconds(0.5f);
         List<Vector3> foldUpPositions = new List<Vector3>();
         for (int a = 0; a < positions.Length; a++)
         {
@@ -87,18 +87,18 @@ public class ConnectionLine : MonoBehaviour
         {
             if (foldUpPositions.Count > 2)
             {
-                foldUpPositions[0] = Vector3.MoveTowards(foldUpPositions[0],foldUpPositions[1], 0.2f);
+                foldUpPositions[0] = Vector3.MoveTowards(foldUpPositions[0],foldUpPositions[1], 15.0f * Time.deltaTime);
                 if (foldUpPositions[0] == foldUpPositions[1])
                     foldUpPositions.RemoveAt(0);
-                foldUpPositions[foldUpPositions.Count-1] = Vector3.MoveTowards(foldUpPositions[foldUpPositions.Count-1],foldUpPositions[foldUpPositions.Count-2], 0.2f);
+                foldUpPositions[foldUpPositions.Count-1] = Vector3.MoveTowards(foldUpPositions[foldUpPositions.Count-1],foldUpPositions[foldUpPositions.Count-2], 15.0f * Time.deltaTime);
                 if (foldUpPositions[foldUpPositions.Count-1] == foldUpPositions[foldUpPositions.Count-2])
                     foldUpPositions.RemoveAt(foldUpPositions.Count-1);
             }
             else if (foldUpPositions.Count > 1)
             {
                 Vector3 target = Vector3.Lerp(foldUpPositions[0],foldUpPositions[1],0.5f);
-                foldUpPositions[0] = Vector3.MoveTowards(foldUpPositions[0],target, 0.2f);
-                foldUpPositions[1] = Vector3.MoveTowards(foldUpPositions[1],target, 0.2f);
+                foldUpPositions[0] = Vector3.MoveTowards(foldUpPositions[0],target, 15.0f * Time.deltaTime);
+                foldUpPositions[1] = Vector3.MoveTowards(foldUpPositions[1],target, 15.0f * Time.deltaTime);
                 if (foldUpPositions[0] == target) 
                     foldUpPositions.RemoveAt(0);
                 else if (foldUpPositions[1] == target) 
@@ -110,7 +110,7 @@ public class ConnectionLine : MonoBehaviour
             lineRenderer.SetPositions(foldUpPositions.ToArray());
             yield return null;
         }
-        GameManager.instance.effects.PlayExplosion(foldUpPositions[0]);
+        // GameManager.instance.effects.PlayExplosion(foldUpPositions[0]);
         ClearLine();
     }
 }

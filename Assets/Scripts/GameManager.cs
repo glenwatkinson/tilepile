@@ -32,6 +32,7 @@ public class GameManager : MonoBehaviour
             gameCamera = Camera.main;
         tileBoard = this.GetComponentInChildren<TileBoard>();
         effects = this.GetComponentInChildren<EffectsManager>();
+        Application.targetFrameRate = 60;
     }
 
     void Start()
@@ -133,6 +134,8 @@ public class GameManager : MonoBehaviour
                         effects.PlaceLine(pathway, true);
                         effects.PlayExplosion(pathway[0]);
                         effects.PlayExplosion(pathway[pathway.Length-1]);
+                        if (tileBoard.tilesOnBoard == 0)
+                            SetGameState(GameState.GameOver);
                     }
                     else
                     {

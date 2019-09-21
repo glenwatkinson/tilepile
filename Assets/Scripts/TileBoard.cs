@@ -24,6 +24,7 @@ public class TileBoard : MonoBehaviour
     public int gridWidth = 16;
     public int gridHeight = 12;
     public int numberOfUniquePieces;
+    public int tilesOnBoard;
     public TilePiece newPiecePrefab;
     public TilePiece[] piecePrefabs;
     public TilePosition[,] tileGrid;
@@ -56,25 +57,69 @@ public class TileBoard : MonoBehaviour
         tileGrid = new TilePosition[gridWidth, gridHeight];
         Vector2 gridOffset = new Vector2((float)-gridWidth/2.0f + 0.5f,(float)-gridHeight/2.0f + 0.5f);
         // I'm not filling the whole grid.  I'm leaving the edge free and using it for connection calculations
-        int numberOfTiles = (gridWidth - 2) * (gridHeight - 2);
+        int totalTilesToAdd = (gridWidth - 2) * (gridHeight - 2);
+        tilesOnBoard = totalTilesToAdd;
+        int tilesAddedSoFar = 0;
         // This section selects a number of random tiles.  They need to be added in pairs so the puzzle is solvable 
+
+        // I want to add some random pairs to the grid so that it's more solvable
+        int pairsToAdd = 20;
+        for (int a = 0; a < pairsToAdd; a=a+2)
+        {
+            int addThisPiece = Random.Range(0,numberOfUniquePieces);
+            int x = Random.Range(1,gridWidth - 3);
+            int y = Random.Range(1,gridHeight - 3);
+            while (tileGrid[x,y].currentPiece != null || 
+                tileGrid[x,y+1].currentPiece != null || 
+                tileGrid[x+1,y].currentPiece != null)
+            {
+                x = Random.Range(1,gridWidth - 3);
+                y = Random.Range(1,gridHeight - 3);
+            }
+            
+            tileGrid[x,y].coordinates = new Vector2Int(x,y);
+            tileGrid[x,y].position = new Vector3(x + gridOffset.x,0,y + gridOffset.y);
+            tileGrid[x,y].currentPiece = GameObject.Instantiate(piecePrefabs[addThisPiece]);
+            tileGrid[x,y].currentPiece.transform.position = tileGrid[x,y].position;
+            tileGrid[x,y].currentPiece.tilePosition = tileGrid[x,y];
+            tileGrid[x,y].currentPiece.pieceValue = addThisPiece;
+            tileGrid[x,y].currentPiece.transform.SetParent(this.transform);
+            tileGrid[x,y].currentPiece.gameObject.SetActive(true);
+            if (Random.Range(0,1) == 0)
+                x = x + 1;
+            else
+                y = y + 1;
+            tileGrid[x,y].coordinates = new Vector2Int(x,y);
+            tileGrid[x,y].position = new Vector3(x + gridOffset.x,0,y + gridOffset.y);
+            tileGrid[x,y].currentPiece = GameObject.Instantiate(piecePrefabs[addThisPiece]);
+            tileGrid[x,y].currentPiece.transform.position = tileGrid[x,y].position;
+            tileGrid[x,y].currentPiece.tilePosition = tileGrid[x,y];
+            tileGrid[x,y].currentPiece.pieceValue = addThisPiece;
+            tileGrid[x,y].currentPiece.transform.SetParent(this.transform);
+            tileGrid[x,y].currentPiece.gameObject.SetActive(true);
+            tilesAddedSoFar += 2;
+        }
+        totalTilesToAdd -= pairsToAdd;
+
+
+
         List<int> allPieces = new List<int>();
         int minimumNumberOfPiece = 2;
         for (int a = 0; a < numberOfUniquePieces; a++)
         {
             allPieces.Add(a);
             allPieces.Add(a);
+            tilesAddedSoFar += 2;
         }
-        for (int a = minimumNumberOfPiece * numberOfUniquePieces; a < numberOfTiles; a = a + 2)
+        for (int a = minimumNumberOfPiece * numberOfUniquePieces; a < totalTilesToAdd; a = a + 2)
         {
             int addThisPiece = Random.Range(0,numberOfUniquePieces);
             allPieces.Add(addThisPiece);
             allPieces.Add(addThisPiece);
+            tilesAddedSoFar += 2;
         }
 
-
-
-        // This section sets up the entire grid with default values
+        // This section fills the rest of the grid randomly
         for (int x = 0; x < gridWidth; x++)
         {
             for (int y = 0; y < gridHeight; y++)
@@ -89,17 +134,20 @@ public class TileBoard : MonoBehaviour
                 else
                 {
                     // selects a random piece from the dictionary and adds it to the grid
-                    int randomIndex = Random.Range(0,allPieces.Count);
-                    int randomPiece = allPieces[randomIndex];
-                    allPieces.RemoveAt(randomIndex);
-                    tileGrid[x,y].coordinates = new Vector2Int(x,y);
-                    tileGrid[x,y].position = new Vector3(x + gridOffset.x,0,y + gridOffset.y);
-                    tileGrid[x,y].currentPiece = GameObject.Instantiate(piecePrefabs[randomPiece]);
-                    tileGrid[x,y].currentPiece.transform.position = tileGrid[x,y].position;
-                    tileGrid[x,y].currentPiece.tilePosition = tileGrid[x,y];
-                    tileGrid[x,y].currentPiece.pieceValue = randomPiece;
-                    tileGrid[x,y].currentPiece.transform.SetParent(this.transform);
-                    tileGrid[x,y].currentPiece.gameObject.SetActive(true);
+                    if (tileGrid[x,y].currentPiece == null)
+                    {
+                        tileGrid[x,y].coordinates = new Vector2Int(x,y);
+                        tileGrid[x,y].position = new Vector3(x + gridOffset.x,0,y + gridOffset.y);
+                        int randomIndex = Random.Range(0,allPieces.Count);
+                        int randomPiece = allPieces[randomIndex];
+                        allPieces.RemoveAt(randomIndex);
+                        tileGrid[x,y].currentPiece = GameObject.Instantiate(piecePrefabs[randomPiece]);
+                        tileGrid[x,y].currentPiece.transform.position = tileGrid[x,y].position;
+                        tileGrid[x,y].currentPiece.tilePosition = tileGrid[x,y];
+                        tileGrid[x,y].currentPiece.pieceValue = randomPiece;
+                        tileGrid[x,y].currentPiece.transform.SetParent(this.transform);
+                        tileGrid[x,y].currentPiece.gameObject.SetActive(true);
+                    }
                 }
             }
         }
@@ -124,6 +172,7 @@ public class TileBoard : MonoBehaviour
         TilePosition impactedPosition = toRemove.tilePosition;
         impactedPosition.currentPiece = null;
         Destroy(toRemove.gameObject);
+        tilesOnBoard--;
     }
     
     public bool CanPiecesConnect(TilePiece firstTile, TilePiece secondTile, out Vector3 [] pathway)
