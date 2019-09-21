@@ -31,6 +31,7 @@ public class TileBoard : MonoBehaviour
     
     public void GenerateGrid()
     {
+        // This section of the code creates new dummy prefabs if they aren't already set up in the editor
         if (numberOfUniquePieces != piecePrefabs.Length)
         {
             TilePiece[] newPiecePrefabs = new TilePiece[numberOfUniquePieces];
@@ -56,10 +57,18 @@ public class TileBoard : MonoBehaviour
 
         tileGrid = new TilePosition[gridWidth, gridHeight];
         Vector2 gridOffset = new Vector2((float)-gridWidth/2.0f + 0.5f,(float)-gridHeight/2.0f + 0.5f);
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                tileGrid[x,y].coordinates = new Vector2Int(x,y);
+                tileGrid[x,y].position = new Vector3(x + gridOffset.x,0,y + gridOffset.y);
+                tileGrid[x,y].currentPiece = null;
+            }
+        }
         // I'm not filling the whole grid.  I'm leaving the edge free and using it for connection calculations
         int totalTilesToAdd = (gridWidth - 2) * (gridHeight - 2);
         tilesOnBoard = totalTilesToAdd;
-        int tilesAddedSoFar = 0;
         // This section selects a number of random tiles.  They need to be added in pairs so the puzzle is solvable 
 
         // I want to add some random pairs to the grid so that it's more solvable
@@ -76,81 +85,59 @@ public class TileBoard : MonoBehaviour
                 x = Random.Range(1,gridWidth - 3);
                 y = Random.Range(1,gridHeight - 3);
             }
-            
-            tileGrid[x,y].coordinates = new Vector2Int(x,y);
-            tileGrid[x,y].position = new Vector3(x + gridOffset.x,0,y + gridOffset.y);
-            tileGrid[x,y].currentPiece = GameObject.Instantiate(piecePrefabs[addThisPiece]);
-            tileGrid[x,y].currentPiece.transform.position = tileGrid[x,y].position;
-            tileGrid[x,y].currentPiece.tilePosition = tileGrid[x,y];
-            tileGrid[x,y].currentPiece.pieceValue = addThisPiece;
-            tileGrid[x,y].currentPiece.transform.SetParent(this.transform);
-            tileGrid[x,y].currentPiece.gameObject.SetActive(true);
+            PlacePieceOnGrid(x,y,addThisPiece);
             if (Random.Range(0,1) == 0)
                 x = x + 1;
             else
                 y = y + 1;
-            tileGrid[x,y].coordinates = new Vector2Int(x,y);
-            tileGrid[x,y].position = new Vector3(x + gridOffset.x,0,y + gridOffset.y);
-            tileGrid[x,y].currentPiece = GameObject.Instantiate(piecePrefabs[addThisPiece]);
-            tileGrid[x,y].currentPiece.transform.position = tileGrid[x,y].position;
-            tileGrid[x,y].currentPiece.tilePosition = tileGrid[x,y];
-            tileGrid[x,y].currentPiece.pieceValue = addThisPiece;
-            tileGrid[x,y].currentPiece.transform.SetParent(this.transform);
-            tileGrid[x,y].currentPiece.gameObject.SetActive(true);
-            tilesAddedSoFar += 2;
+            PlacePieceOnGrid(x,y,addThisPiece);
         }
         totalTilesToAdd -= pairsToAdd;
 
 
-
-        List<int> allPieces = new List<int>();
+        // Here I create a list of at least one pair of every tile type and the rest is random pairs
+        List<int> piecesToAdd = new List<int>();
         int minimumNumberOfPiece = 2;
         for (int a = 0; a < numberOfUniquePieces; a++)
         {
-            allPieces.Add(a);
-            allPieces.Add(a);
-            tilesAddedSoFar += 2;
+            piecesToAdd.Add(a);
+            piecesToAdd.Add(a);
         }
         for (int a = minimumNumberOfPiece * numberOfUniquePieces; a < totalTilesToAdd; a = a + 2)
         {
             int addThisPiece = Random.Range(0,numberOfUniquePieces);
-            allPieces.Add(addThisPiece);
-            allPieces.Add(addThisPiece);
-            tilesAddedSoFar += 2;
+            piecesToAdd.Add(addThisPiece);
+            piecesToAdd.Add(addThisPiece);
         }
 
-        // This section fills the rest of the grid randomly
+        // This section fills the rest of the grid randomly from the above
         for (int x = 0; x < gridWidth; x++)
         {
             for (int y = 0; y < gridHeight; y++)
             {
-                if (x == 0 || y == 0 || x == gridWidth - 1 || y == gridHeight - 1)
-                {
-                    // the edges still need to have their values set
-                    tileGrid[x,y].coordinates = new Vector2Int(x,y);
-                    tileGrid[x,y].position = new Vector3(x + gridOffset.x,0,y + gridOffset.y);
-                    tileGrid[x,y].currentPiece = null;
-                }
-                else
+                if (x != 0 && y != 0 && x != gridWidth - 1 && y != gridHeight - 1 && tileGrid[x, y].currentPiece == null)
                 {
                     // selects a random piece from the dictionary and adds it to the grid
-                    if (tileGrid[x,y].currentPiece == null)
-                    {
-                        tileGrid[x,y].coordinates = new Vector2Int(x,y);
-                        tileGrid[x,y].position = new Vector3(x + gridOffset.x,0,y + gridOffset.y);
-                        int randomIndex = Random.Range(0,allPieces.Count);
-                        int randomPiece = allPieces[randomIndex];
-                        allPieces.RemoveAt(randomIndex);
-                        tileGrid[x,y].currentPiece = GameObject.Instantiate(piecePrefabs[randomPiece]);
-                        tileGrid[x,y].currentPiece.transform.position = tileGrid[x,y].position;
-                        tileGrid[x,y].currentPiece.tilePosition = tileGrid[x,y];
-                        tileGrid[x,y].currentPiece.pieceValue = randomPiece;
-                        tileGrid[x,y].currentPiece.transform.SetParent(this.transform);
-                        tileGrid[x,y].currentPiece.gameObject.SetActive(true);
-                    }
+                    tileGrid[x, y].coordinates = new Vector2Int(x, y);
+                    tileGrid[x, y].position = new Vector3(x + gridOffset.x, 0, y + gridOffset.y);
+                    int randomIndex = Random.Range(0, piecesToAdd.Count);
+                    int randomPiece = piecesToAdd[randomIndex];
+                    piecesToAdd.RemoveAt(randomIndex);
+                    PlacePieceOnGrid(x, y, randomPiece);
                 }
             }
         }
+    }
+
+    private void PlacePieceOnGrid(int x, int y, int pieceIndex)
+    {
+        Debug.Log(x + "," + y + " piece = " + pieceIndex);
+        tileGrid[x,y].currentPiece = GameObject.Instantiate(piecePrefabs[pieceIndex]);
+        tileGrid[x,y].currentPiece.transform.position = tileGrid[x,y].position;
+        tileGrid[x,y].currentPiece.tilePosition = tileGrid[x,y];
+        tileGrid[x,y].currentPiece.pieceValue = pieceIndex;
+        tileGrid[x,y].currentPiece.transform.SetParent(this.transform);
+        tileGrid[x,y].currentPiece.gameObject.SetActive(true);
     }
 
     public void ClearGrid()

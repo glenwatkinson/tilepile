@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+interface IUIScreen
+{
+    void ConfigureScreen();
+}
+
 public class UIManager : MonoBehaviour
 {
     CanvasGroup[] uiSection;

@@ -8,7 +8,6 @@ public class EffectsManager : MonoBehaviour
     List<ConnectionLine> connectionLine = new List<ConnectionLine>();
     List<ParticleSystem> explosionPrefabs = new List<ParticleSystem>();
 
-    // Start is called before the first frame update
     void Awake()
     {
         highlightCube = transform.Find("Tile Highlight").gameObject;
@@ -45,15 +44,15 @@ public class EffectsManager : MonoBehaviour
         explosionPrefabs[explosionPrefabs.Count-1].Play();
     }
 
-    public void ClearTileHighlights()
-    {
-        highlightCube.SetActive(false);
-    }
-
     public void PlaceTileHighlight(Vector3 position)
     {
         highlightCube.SetActive(true);
         highlightCube.transform.position = position;
+    }
+
+    public void ClearTileHighlights()
+    {
+        highlightCube.SetActive(false);
     }
 
     public void PlaceLine(Vector3[] positions, bool animateFromCurrent = false)
