@@ -34,7 +34,7 @@ public class GameManager : MonoBehaviour
         effects = this.GetComponentInChildren<EffectsManager>();
         Application.targetFrameRate = 60;
         if ((float)Screen.width/(float)Screen.height > 1.5f)
-            gameCamera.transform.position = Vector3.up * 10.5f;
+            gameCamera.transform.position = new Vector3(0,10.5f,0.25f);
         else
             gameCamera.transform.position = Vector3.up * 12.0f;
     }

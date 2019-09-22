@@ -23,8 +23,6 @@ public class UIManager : MonoBehaviour
 
     public void SetUIScreen(GameState newState, bool transition)
     {
-        if (transition)
-            isTransitioning = true;
         for (int a = 0; a < uiSection.Length; a++)
         {
             if (uiSection[a] != null)
@@ -34,7 +32,10 @@ public class UIManager : MonoBehaviour
                     if (uiSection[a].GetComponent<IUIScreen>() != null)
                         uiSection[a].GetComponent<IUIScreen>().ConfigureScreen();
                     if (transition && !uiSection[a].gameObject.activeSelf && uiSection[a].alpha == 0)
+                    {
+                        isTransitioning = true;
                         StartCoroutine(FadeInSection(uiSection[a]));
+                    }
                     else
                     {
                         uiSection[a].gameObject.SetActive(true);
