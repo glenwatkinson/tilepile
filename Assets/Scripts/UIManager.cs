@@ -21,8 +21,10 @@ public class UIManager : MonoBehaviour
         uiSection[(int)GameState.GameOver] = this.transform.Find("Game Over").GetComponent<CanvasGroup>();
     }
 
-    public void SetUIScreen(GameState newState)
+    public void SetUIScreen(GameState newState, bool transition)
     {
+        if (transition)
+            isTransitioning = true;
         for (int a = 0; a < uiSection.Length; a++)
         {
             if (uiSection[a] != null)
@@ -31,13 +33,20 @@ public class UIManager : MonoBehaviour
                 {
                     if (uiSection[a].GetComponent<IUIScreen>() != null)
                         uiSection[a].GetComponent<IUIScreen>().ConfigureScreen();
-                    if (!uiSection[a].gameObject.activeSelf && uiSection[a].alpha == 0)
+                    if (transition && !uiSection[a].gameObject.activeSelf && uiSection[a].alpha == 0)
                         StartCoroutine(FadeInSection(uiSection[a]));
+                    else
+                    {
+                        uiSection[a].gameObject.SetActive(true);
+                        uiSection[a].alpha = 1;
+                    }
                 }
                 else
                 {
-                    if (uiSection[a].gameObject.activeSelf && uiSection[a].alpha == 1)
+                    if (transition && uiSection[a].gameObject.activeSelf && uiSection[a].alpha == 1)
                         StartCoroutine(FadeOutSection(uiSection[a]));
+                    else
+                        uiSection[a].gameObject.SetActive(false);
                 }
             }
         }
@@ -45,7 +54,6 @@ public class UIManager : MonoBehaviour
 
     IEnumerator FadeInSection(CanvasGroup section)
     {
-        isTransitioning = true;
         section.gameObject.SetActive(true);
         section.alpha = 0;
         yield return new WaitForSeconds(0.25f);

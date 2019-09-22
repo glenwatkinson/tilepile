@@ -131,7 +131,6 @@ public class TileBoard : MonoBehaviour
 
     private void PlacePieceOnGrid(int x, int y, int pieceIndex)
     {
-        Debug.Log(x + "," + y + " piece = " + pieceIndex);
         tileGrid[x,y].currentPiece = GameObject.Instantiate(piecePrefabs[pieceIndex]);
         tileGrid[x,y].currentPiece.transform.position = tileGrid[x,y].position;
         tileGrid[x,y].currentPiece.tilePosition = tileGrid[x,y];

@@ -33,16 +33,20 @@ public class GameManager : MonoBehaviour
         tileBoard = this.GetComponentInChildren<TileBoard>();
         effects = this.GetComponentInChildren<EffectsManager>();
         Application.targetFrameRate = 60;
+        if ((float)Screen.width/(float)Screen.height > 1.5f)
+            gameCamera.transform.position = Vector3.up * 10.5f;
+        else
+            gameCamera.transform.position = Vector3.up * 12.0f;
     }
 
     void Start()
     {
-        SetGameState(GameState.Opening);
+        SetGameState(GameState.Opening, false);
     }
 
-    public void SetGameState(GameState newGameState)
+    public void SetGameState(GameState newGameState, bool transition = true)
     {
-        if (uIManager.isTransitioning)
+        if (uIManager.isTransitioning && transition)
             return;
         switch (newGameState)
         {
@@ -59,7 +63,7 @@ public class GameManager : MonoBehaviour
                 effects.ClearLines();
                 break;
         }
-        uIManager.SetUIScreen(newGameState);
+        uIManager.SetUIScreen(newGameState, transition);
         currentGameState = newGameState;
     }
 
