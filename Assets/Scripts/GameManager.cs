@@ -150,7 +150,8 @@ public class GameManager : MonoBehaviour
             if (firstHitTile == hitPiece)
                 return;
             Vector3[] pathway;
-            if (tileBoard.CanPiecesConnect(firstHitTile, hitPiece, out pathway))
+            if (firstHitTile != hitPiece && firstHitTile.pieceValue == hitPiece.pieceValue && 
+                tileBoard.CanCoordinatesConnect(firstHitTile.tilePosition.coordinates, hitPiece.tilePosition.coordinates, out pathway))
             {
                 tileBoard.RemoveTilePiece(firstHitTile);
                 tileBoard.RemoveTilePiece(hitPiece);

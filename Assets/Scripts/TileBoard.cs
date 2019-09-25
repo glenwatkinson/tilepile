@@ -28,6 +28,8 @@ public class TileBoard : MonoBehaviour
     public TilePiece newPiecePrefab;
     public TilePiece[] piecePrefabs;
     public TilePosition[,] tileGrid;
+    // this is set to false only for puzzle generation - don't change it
+    private bool checkBlanks = true;
     
     public void GenerateGrid()
     {
@@ -69,7 +71,97 @@ public class TileBoard : MonoBehaviour
         // I'm not filling the whole grid.  I'm leaving the edge free and using it for connection calculations
         int totalTilesToAdd = (gridWidth - 2) * (gridHeight - 2);
         tilesOnBoard = totalTilesToAdd;
-        // This section selects a number of random tiles.  They need to be added in pairs so the puzzle is solvable 
+
+        // this section of the code builds the puzzle in a way such that it guarantees a solution
+        List<Vector2Int> availablePlacements = new List<Vector2Int>();
+        availablePlacements.Add(new Vector2Int(Random.Range(1,gridWidth-2), Random.Range(1,gridHeight-2)));
+        // just a safety net, it should only loop "totalTilesToAdd" times
+        int maxLoopIterations = 300;
+        // this is basically the reverse of the 3 line segment check.  Instead of checking if 2 pieces connect through 3 line segments over blank grid positions,
+        // this checks if the 2 pieces connect over 3 line segments with filled grid positions.  It just starts with a random pair and assumes that the user
+        // will remove that pair first.
+        checkBlanks = false;
+        while (totalTilesToAdd > 0 && maxLoopIterations > 0)
+        {
+            maxLoopIterations--;
+            int r = Random.Range(0,availablePlacements.Count);
+            Vector2Int firstPlacement = availablePlacements[Random.Range(0,availablePlacements.Count)];
+            int addThisPiece = Random.Range(0,numberOfUniquePieces);
+            PlacePieceOnGrid(firstPlacement.x,firstPlacement.y,addThisPiece);
+            availablePlacements.Remove(firstPlacement);
+            // we can only add the new check points if we find a valid pair position for the first tile, so this needs to be stored in a temporary variable.
+            List<Vector2Int> newFromFirst = new List<Vector2Int>();
+            if (firstPlacement.x-1 > 0 && tileGrid[firstPlacement.x-1,firstPlacement.y].currentPiece == null && 
+                !availablePlacements.Contains(new Vector2Int(firstPlacement.x-1,firstPlacement.y)))
+                newFromFirst.Add(new Vector2Int(firstPlacement.x-1,firstPlacement.y));
+            if (firstPlacement.x+1 < gridWidth-1 && tileGrid[firstPlacement.x+1,firstPlacement.y].currentPiece == null && 
+                !availablePlacements.Contains(new Vector2Int(firstPlacement.x+1,firstPlacement.y)))
+                newFromFirst.Add(new Vector2Int(firstPlacement.x+1,firstPlacement.y));
+            if (firstPlacement.y-1 > 0 && tileGrid[firstPlacement.x,firstPlacement.y-1].currentPiece == null && 
+                !availablePlacements.Contains(new Vector2Int(firstPlacement.x,firstPlacement.y-1)))
+                newFromFirst.Add(new Vector2Int(firstPlacement.x,firstPlacement.y-1));
+            if (firstPlacement.y+1 < gridHeight-1 && tileGrid[firstPlacement.x,firstPlacement.y+1].currentPiece == null && 
+                !availablePlacements.Contains(new Vector2Int(firstPlacement.x,firstPlacement.y+1)))
+                newFromFirst.Add(new Vector2Int(firstPlacement.x,firstPlacement.y+1));
+            // this goes through all the new available pieces (on the edge of the already placed pieces) and checks if there are 3 line segments between them
+            // and the first placed tile
+            List<Vector2Int> availableConnections = new List<Vector2Int>();
+            for (int a = 0; a < availablePlacements.Count + newFromFirst.Count; a++)
+            {
+                Vector3[] pathway;
+                if (a < availablePlacements.Count)
+                {
+                    if (CanCoordinatesConnect(firstPlacement, availablePlacements[a],out pathway))
+                        availableConnections.Add(availablePlacements[a]);
+                }
+                else
+                {
+                    if (CanCoordinatesConnect(firstPlacement, newFromFirst[a - availablePlacements.Count],out pathway))
+                        availableConnections.Add(newFromFirst[a - availablePlacements.Count]);
+                }
+            }
+            if (availableConnections.Count > 0)
+            {
+                // we have found valid pairs and select one of them at random to connect with the first piece
+                Vector2Int secondPlacement = availableConnections[Random.Range(0,availableConnections.Count)];
+                PlacePieceOnGrid(secondPlacement.x,secondPlacement.y,addThisPiece);
+                for (int a = 0; a < newFromFirst.Count; a++)
+                {
+                    if (!availablePlacements.Contains(newFromFirst[a]))
+                        availablePlacements.Add(newFromFirst[a]);
+                }
+                availablePlacements.Remove(secondPlacement);
+                if (secondPlacement.x-1 > 0 && tileGrid[secondPlacement.x-1,secondPlacement.y].currentPiece == null && 
+                    !availablePlacements.Contains(new Vector2Int(secondPlacement.x-1,secondPlacement.y)))
+                    availablePlacements.Add(new Vector2Int(secondPlacement.x-1,secondPlacement.y));
+                if (secondPlacement.x+1 < gridWidth-1 && tileGrid[secondPlacement.x+1,secondPlacement.y].currentPiece == null && 
+                    !availablePlacements.Contains(new Vector2Int(secondPlacement.x+1,secondPlacement.y)))
+                    availablePlacements.Add(new Vector2Int(secondPlacement.x+1,secondPlacement.y));
+                if (secondPlacement.y-1 > 0 && tileGrid[secondPlacement.x,secondPlacement.y-1].currentPiece == null && 
+                    !availablePlacements.Contains(new Vector2Int(secondPlacement.x,secondPlacement.y-1)))
+                    availablePlacements.Add(new Vector2Int(secondPlacement.x,secondPlacement.y-1));
+                if (secondPlacement.y+1 < gridHeight-1 && tileGrid[secondPlacement.x,secondPlacement.y+1].currentPiece == null && 
+                    !availablePlacements.Contains(new Vector2Int(secondPlacement.x,secondPlacement.y+1)))
+                    availablePlacements.Add(new Vector2Int(secondPlacement.x,secondPlacement.y+1));
+                totalTilesToAdd -= 2;
+            }
+            else
+            {
+                // we couldn't find a pair for the first piece so we'll just try another
+                // (this shouldn't be used)
+                RemoveTilePiece(tileGrid[firstPlacement.x,firstPlacement.y].currentPiece);
+            }
+        }
+
+        checkBlanks = true;
+        if (totalTilesToAdd <= 0)
+            return;
+        // we shouldn't get here
+        Debug.LogError("FAILED TO GENERATE SOLVED PUZZLE");
+
+        // This is the original random puzzle generation with a few pairs
+        ClearGrid();
+        totalTilesToAdd = 140;
 
         // I want to add some random pairs to the grid so that it's more solvable
         int pairsToAdd = 20;
@@ -161,20 +253,23 @@ public class TileBoard : MonoBehaviour
         tilesOnBoard--;
     }
     
-    public bool CanPiecesConnect(TilePiece firstTile, TilePiece secondTile, out Vector3 [] pathway)
+    public bool CanCoordinatesConnect(Vector2Int startPosition, Vector2Int endPosition, out Vector3 [] pathway)
     {
         // The rules of the game are that the pieces need to be have a clear path between them containing 3 line segments or fewer.
         // That is what this function checks for.  It also needs to provide the pathway for the game to display properly.
         pathway = new Vector3[0];
 
         // First get some of the easier checks out of the way.
-        if (firstTile == secondTile)
-            return false;
-        if (firstTile.pieceValue != secondTile.pieceValue)
-            return false;
+        // if (checkBlanks)
+        // {
+        //     if (firstTile == secondTile)
+        //         return false;
+        //     if (firstTile.pieceValue != secondTile.pieceValue)
+        //         return false;
+        // }
 
-        Vector2Int startPosition = firstTile.tilePosition.coordinates;
-        Vector2Int endPosition = secondTile.tilePosition.coordinates;
+        // Vector2Int startPosition = firstTile.tilePosition.coordinates;
+        // Vector2Int endPosition = secondTile.tilePosition.coordinates;
         Vector2Int[] pathwayCoords = new Vector2Int[0];
         bool foundAPath = false;
 
@@ -227,7 +322,8 @@ public class TileBoard : MonoBehaviour
             Vector2Int checkVector = modVector * a + startPosition;
             if (checkVector.x < 0 || checkVector.y < 0 || checkVector.x >= gridWidth || checkVector.y >= gridHeight)
                 break;
-            else if (tileGrid[checkVector.x,checkVector.y].currentPiece == null)
+            else if ((checkBlanks && tileGrid[checkVector.x,checkVector.y].currentPiece == null) || 
+                (!checkBlanks && tileGrid[checkVector.x,checkVector.y].currentPiece != null))
             {
                 currentClearance = a;
             }
